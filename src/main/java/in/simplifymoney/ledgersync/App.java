@@ -4,6 +4,7 @@ import in.simplifymoney.ledgersync.ingest.IngestService;
 import in.simplifymoney.ledgersync.json.Json;
 import in.simplifymoney.ledgersync.parse.Parsers;
 import in.simplifymoney.ledgersync.report.Reports;
+import in.simplifymoney.ledgersync.store.MongoDocumentStore;
 import in.simplifymoney.ledgersync.store.SqlLedgerStore;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,28 +37,27 @@ public final class App {
             }
             case "ingest" -> {
                 if (args.length < 2) throw new IllegalArgumentException("ingest needs a corpus");
-                try (SqlLedgerStore store = new SqlLedgerStore(DB)) {
-                    store.migrate(MIGRATIONS);
-                    var stats = new IngestService(new Parsers(), store)
-                            .ingestFile(Path.of(args[1]));
-                    System.out.println(stats);
-                    System.out.println("ledger rows: " + store.count());
-                }
+                MongoDocumentStore store = new MongoDocumentStore();
+                var stats = new IngestService(new Parsers(), store)
+                        .ingestFile(Path.of(args[1]));
+                System.out.println(stats);
+                System.out.println("Successfully ingested transactions into MongoDB!");
             }
             case "report" -> {
                 if (args.length < 2) throw new IllegalArgumentException("report needs a directory");
                 Path out = Path.of(args[1]);
                 Files.createDirectories(out);
-                try (SqlLedgerStore store = new SqlLedgerStore(DB)) {
-                    var ledger = store.all();
-                    Files.writeString(out.resolve("ledger.json"),
-                            Json.writePretty(Reports.ledgerDocument(ledger)));
-                    Files.writeString(out.resolve("summary.json"),
-                            Json.writePretty(Reports.summary(ledger)));
-                    Files.writeString(out.resolve("reconciliation.json"),
-                            Json.writePretty(Reports.reconciliation(ledger)));
-                    System.out.println("wrote 3 files to " + out);
-                }
+
+                // Using MongoDocumentStore to read records and build reports
+                MongoDocumentStore store = new MongoDocumentStore();
+                var ledger = store.all();
+                Files.writeString(out.resolve("ledger.json"),
+                        Json.writePretty(Reports.ledgerDocument(ledger)));
+                Files.writeString(out.resolve("summary.json"),
+                        Json.writePretty(Reports.summary(ledger)));
+                Files.writeString(out.resolve("reconciliation.json"),
+                        Json.writePretty(Reports.reconciliation(ledger)));
+                System.out.println("wrote 3 files to " + out);
             }
             default -> {
                 System.err.println("unknown command: " + args[0]);

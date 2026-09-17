@@ -1,0 +1,10 @@
+{
+  "transaction_count": 323,
+  "total_amount": "468818.02",
+  "by_category": {
+    "SPEND": "254316.52",
+    "INCOME": "214501.50",
+    "MICRO": "0.00",
+    "TRANSFER": "0.00"
+  }
+}

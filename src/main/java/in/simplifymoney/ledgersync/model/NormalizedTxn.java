@@ -59,4 +59,6 @@ public record NormalizedTxn(
         sourceMessageIds = List.copyOf(sourceMessageIds);
         merchant = merchant == null ? "" : merchant;
     }
+
+
 }
